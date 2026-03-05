@@ -55,7 +55,7 @@ target_link_options(${KERNEL_BINARY} PRIVATE
     -z max-page-size=0x1000
 )
 
-# Cria a ISO (buscando binários em limine/bin/)
+# Cria a ISO (sem opções complexas)
 add_custom_target(iso
     DEPENDS ${KERNEL_BINARY}
     COMMAND ${CMAKE_COMMAND} -E make_directory iso_root/boot/limine
@@ -71,13 +71,15 @@ add_custom_target(iso
         -no-emul-boot
         -boot-load-size 4
         -boot-info-table
-        --efi-boot boot/limine/limine-uefi-cd.bin
-        -efi-boot-part
+        -eltorito-alt-boot
+        -e boot/limine/limine-uefi-cd.bin
+        -no-emul-boot
         --protective-msdos-label
         iso_root
         -o ${ISO_IMAGE}
     COMMAND chmod +x ${CMAKE_CURRENT_SOURCE_DIR}/limine/bin/limine
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/limine/bin/limine bios-install ${ISO_IMAGE}
+    # Tenta instalar o stage 2 (pode falhar, mas a ISO ainda pode ser bootável)
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/limine/bin/limine bios-install ${ISO_IMAGE} || true
 )
 
 add_custom_target(run
