@@ -55,7 +55,7 @@ target_link_options(${KERNEL_BINARY} PRIVATE
     -z max-page-size=0x1000
 )
 
-# Cria a ISO (sem opções complexas)
+# Cria a ISO com offset de partição 63
 add_custom_target(iso
     DEPENDS ${KERNEL_BINARY}
     COMMAND ${CMAKE_COMMAND} -E make_directory iso_root/boot/limine
@@ -74,12 +74,13 @@ add_custom_target(iso
         -eltorito-alt-boot
         -e boot/limine/limine-uefi-cd.bin
         -no-emul-boot
+        -partition_offset 63          # <-- offset 63 (padrão BIOS)
         --protective-msdos-label
         iso_root
         -o ${ISO_IMAGE}
     COMMAND chmod +x ${CMAKE_CURRENT_SOURCE_DIR}/limine/bin/limine
-    # Tenta instalar o stage 2 (pode falhar, mas a ISO ainda pode ser bootável)
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/limine/bin/limine bios-install ${ISO_IMAGE} || true
+    # Instala o stage 2 (agora deve funcionar)
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/limine/bin/limine bios-install ${ISO_IMAGE}
 )
 
 add_custom_target(run
