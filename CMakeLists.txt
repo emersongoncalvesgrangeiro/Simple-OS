@@ -34,15 +34,14 @@ file(GLOB_RECURSE C_SOURCES
     src/threads/*.c
 )
 
-# Coleta todos os .asm
+# Coleta todos os .S (assembly)
 file(GLOB_RECURSE ASM_SOURCES
-    src/arch/x86_64/*.asm
+    src/arch/x86_64/*.S
 )
-
-set_source_files_properties(${ASM_SOURCES} PROPERTIES LANGUAGE ASM)
 
 add_executable(${KERNEL_BINARY} ${C_SOURCES} ${ASM_SOURCES})
 
+# Diretórios de inclusão
 target_include_directories(${KERNEL_BINARY} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -56,12 +55,17 @@ target_link_options(${KERNEL_BINARY} PRIVATE
     -z max-page-size=0x1000
 )
 
+# Cria a ISO (buscando binários em limine/bin/)
 add_custom_target(iso
     DEPENDS ${KERNEL_BINARY}
     COMMAND ${CMAKE_COMMAND} -E make_directory iso_root/boot/limine
     COMMAND ${CMAKE_COMMAND} -E copy ${KERNEL_BINARY} iso_root/boot/
-    COMMAND ${CMAKE_COMMAND} -E copy limine.conf iso_root/boot/
-    COMMAND cp limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin iso_root/boot/limine/
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/limine.conf iso_root/boot/
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/limine/bin/limine-bios.sys
+        ${CMAKE_CURRENT_SOURCE_DIR}/limine/bin/limine-bios-cd.bin
+        ${CMAKE_CURRENT_SOURCE_DIR}/limine/bin/limine-uefi-cd.bin
+        iso_root/boot/limine/
     COMMAND xorriso -as mkisofs
         -b boot/limine/limine-bios-cd.bin
         -no-emul-boot
@@ -72,7 +76,8 @@ add_custom_target(iso
         --protective-msdos-label
         iso_root
         -o ${ISO_IMAGE}
-    COMMAND ./limine/limine bios-install ${ISO_IMAGE}
+    COMMAND chmod +x ${CMAKE_CURRENT_SOURCE_DIR}/limine/bin/limine
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/limine/bin/limine bios-install ${ISO_IMAGE}
 )
 
 add_custom_target(run

@@ -1,3 +1,4 @@
+#include <panic.h>
 #include <vmm.h>
 
 void vmm_init(void) { }

@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-char *gets(char *buffer) {
-    // TODO
-    return buffer;
+int scanf(const char *fmt, ...) {
+    // TODO: implementar
+    return 0;
 }

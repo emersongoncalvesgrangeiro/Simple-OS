@@ -1,5 +1,5 @@
-#include <scheduler.h>
 #include <panic.h>
+#include <scheduler.h>
 
 void scheduler_init(void) { }
 void scheduler_add(thread_t *thread) { (void)thread; }

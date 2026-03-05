@@ -1,15 +1,13 @@
 OUTPUT_FORMAT(elf64-x86-64)
 ENTRY(_start)
 
-PHDRS
-{
+PHDRS{
     text    PT_LOAD    FLAGS(0x05);
     rodata  PT_LOAD    FLAGS(0x04);
     data    PT_LOAD    FLAGS(0x06);
 }
 
-SECTIONS
-{
+SECTIONS{
     . = 0xffffffff80000000;
 
     .text : {
