@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(MeuOS C ASM)
+project(SimpleOS C ASM)
 
 set(CMAKE_C_STANDARD 11)
 
@@ -16,24 +16,41 @@ set(KERNEL_FLAGS
     -mno-sse
     -mno-sse2
     -mno-red-zone
+    -mcmodel=kernel
 )
 
 add_compile_options(${KERNEL_FLAGS} -g)
 
 set(KERNEL_BINARY kernel.elf)
-set(ISO_IMAGE meulos.iso)
+set(ISO_IMAGE SimpleOS.iso)
 
-include_directories(src)
-
-file(GLOB_RECURSE SOURCES
-    src/*.c
-    src/*.asm
+# Coleta todos os .c
+file(GLOB_RECURSE C_SOURCES
+    src/display/*.c
+    src/drivers/*.c
+    src/kernel/*.c
+    src/libc/*/*.c
+    src/memory/*.c
+    src/threads/*.c
 )
 
-add_executable(${KERNEL_BINARY} ${SOURCES})
+# Coleta todos os .asm
+file(GLOB_RECURSE ASM_SOURCES
+    src/arch/x86_64/*.asm
+)
+
+set_source_files_properties(${ASM_SOURCES} PROPERTIES LANGUAGE ASM)
+
+add_executable(${KERNEL_BINARY} ${C_SOURCES} ${ASM_SOURCES})
+
+target_include_directories(${KERNEL_BINARY} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/limine
+)
 
 target_link_options(${KERNEL_BINARY} PRIVATE
-    -T ${CMAKE_CURRENT_SOURCE_DIR}/src/linker.ld
+    -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
     -nostdlib
     -static
     -z max-page-size=0x1000
@@ -41,16 +58,16 @@ target_link_options(${KERNEL_BINARY} PRIVATE
 
 add_custom_target(iso
     DEPENDS ${KERNEL_BINARY}
-    COMMAND ${CMAKE_COMMAND} -E make_directory iso_root
-    COMMAND ${CMAKE_COMMAND} -E copy ${KERNEL_BINARY} iso_root/
-    COMMAND ${CMAKE_COMMAND} -E copy limine.conf iso_root/
-    COMMAND cp limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin iso_root/
+    COMMAND ${CMAKE_COMMAND} -E make_directory iso_root/boot/limine
+    COMMAND ${CMAKE_COMMAND} -E copy ${KERNEL_BINARY} iso_root/boot/
+    COMMAND ${CMAKE_COMMAND} -E copy limine.conf iso_root/boot/
+    COMMAND cp limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin iso_root/boot/limine/
     COMMAND xorriso -as mkisofs
-        -b limine-bios-cd.bin
+        -b boot/limine/limine-bios-cd.bin
         -no-emul-boot
         -boot-load-size 4
         -boot-info-table
-        --efi-boot limine-uefi-cd.bin
+        --efi-boot boot/limine/limine-uefi-cd.bin
         -efi-boot-part
         --protective-msdos-label
         iso_root
@@ -63,5 +80,4 @@ add_custom_target(run
     COMMAND qemu-system-x86_64
         -cdrom ${ISO_IMAGE}
         -m 512M
-        -bios /usr/share/OVMF/OVMF_CODE.fd
 )

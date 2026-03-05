@@ -3,14 +3,13 @@ ENTRY(_start)
 
 PHDRS
 {
-    text    PT_LOAD    FLAGS(0x05); /* Read + Execute */
-    rodata  PT_LOAD    FLAGS(0x04); /* Read Only */
-    data    PT_LOAD    FLAGS(0x06); /* Read + Write */
+    text    PT_LOAD    FLAGS(0x05);
+    rodata  PT_LOAD    FLAGS(0x04);
+    data    PT_LOAD    FLAGS(0x06);
 }
 
 SECTIONS
 {
-    /* Endereço padrão para kernels de 64 bits no Limine */
     . = 0xffffffff80000000;
 
     .text : {
@@ -19,6 +18,12 @@ SECTIONS
 
     .rodata : {
         *(.rodata .rodata.*)
+    } :rodata
+
+    .requests : {
+        KEEP(*(.requests_start_marker))
+        KEEP(*(.requests))
+        KEEP(*(.requests_end_marker))
     } :rodata
 
     .data : {
@@ -30,4 +35,3 @@ SECTIONS
         *(COMMON)
     } :data
 }
-
